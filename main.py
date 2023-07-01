@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QSlider, QPu
     QStyle, QSizePolicy, QHBoxLayout, QListWidget, QAbstractItemView, QMessageBox, QLineEdit
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl, QTimer
+from PyQt5.QtGui import QIcon
+
 
 
 class AudioPlayer(QMainWindow):
@@ -11,6 +13,7 @@ class AudioPlayer(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Audio Player")
+        self.setWindowIcon(QIcon("ico.ico"))
         self.setGeometry(100, 100, 600, 400)
 
         self.media_player = QMediaPlayer()
