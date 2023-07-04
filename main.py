@@ -1,33 +1,11 @@
 import sys
 import os
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QSlider, QPushButton, QLabel, QWidget, QFileDialog,
-    QStyle, QSizePolicy, QHBoxLayout, QListWidget, QAbstractItemView, QLineEdit, QListWidgetItem
-)
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QSlider, QPushButton, QLabel, QWidget, QFileDialog, QStyle, QSizePolicy, QHBoxLayout, QListWidget, QAbstractItemView, QLineEdit, QListWidgetItem, QProgressBar
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from PyQt5.QtCore import Qt, QUrl, QTimer, pyqtSignal, QRect
+from PyQt5.QtCore import Qt, QUrl, QTimer, pyqtSignal, QRect, QPropertyAnimation, QPoint, QEasingCurve, QObject
 from PyQt5.QtGui import QIcon, QPalette, QColor, QPainter, QLinearGradient
 
-class ScrollingLabel(QLabel):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.scroll_speed = 100  # pixels per second
-        self.scroll_timer = QTimer(self)
-        self.scroll_timer.timeout.connect(self.scroll_text)
-        self.scroll_position = self.width()
-
-    def start_scroll(self, duration):
-        self.scroll_position = self.width()
-        self.scroll_timer.stop()
-        if self.width() < self.fontMetrics().width(self.text()):
-            self.scroll_timer.start(duration)
-
-    def stop_scroll(self):
-        self.scroll_timer.stop()
-
-    def scroll_text(self):
-        self.scroll_position -= self.scroll_speed / 1000 * self.scroll_timer.interval()
-        self.update()
+from PyQt5.QtCore import QPropertyAnimation, QPoint
 
 class AudioPlayer(QMainWindow):
     def __init__(self):
@@ -53,6 +31,9 @@ class AudioPlayer(QMainWindow):
         self.media_player.mediaStatusChanged.connect(self.handle_media_status)
 
     def setup_ui(self):
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
         self.volume_slider = QSlider(Qt.Horizontal)
         self.volume_slider.setRange(0, 100)
         self.volume_slider.setValue(50)
@@ -65,12 +46,15 @@ class AudioPlayer(QMainWindow):
         self.playlist_widget.setSelectionMode(QAbstractItemView.SingleSelection)
         self.playlist_widget.setSpacing(5)
         self.search_input = QLineEdit()
-        self.search_button = QPushButton()
-        search_icon = QIcon("search.png")  # Замените "search_icon.png" на путь к вашей иконке поиска
-        self.search_button.setIcon(search_icon)
+        self.clear_button = QPushButton()
+        self.clear_button.setIcon(QIcon("search.png"))  # Замените "clear.png" на путь к вашей иконке стирания
         self.duration_label = QLabel("00:00 / 00:00")
-        self.scroll_label = ScrollingLabel()
+        self.seek_forward_button = QPushButton()
+        self.seek_backward_button = QPushButton()
+        self.song_label = QLabel()
 
+        self.seek_forward_button.setIcon(self.style().standardIcon(QStyle.SP_MediaSeekForward))
+        self.seek_backward_button.setIcon(self.style().standardIcon(QStyle.SP_MediaSeekBackward))
         self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.stop_button.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
         self.previous_button.setIcon(self.style().standardIcon(QStyle.SP_MediaSkipBackward))
@@ -80,13 +64,16 @@ class AudioPlayer(QMainWindow):
         control_layout = QHBoxLayout()
         control_layout.setContentsMargins(0, 0, 0, 0)
         control_layout.addWidget(self.previous_button)
+        control_layout.addWidget(self.seek_backward_button)
         control_layout.addWidget(self.play_button)
         control_layout.addWidget(self.stop_button)
+        control_layout.addWidget(self.seek_forward_button)
         control_layout.addWidget(self.next_button)
 
         search_layout = QHBoxLayout()
         search_layout.addWidget(self.search_input)
-        search_layout.addWidget(self.search_button)
+        search_layout.addWidget(self.clear_button)
+
 
         main_layout.addWidget(self.open_button)
         main_layout.addLayout(control_layout)
@@ -94,7 +81,8 @@ class AudioPlayer(QMainWindow):
         main_layout.addLayout(search_layout)
         main_layout.addWidget(self.playlist_widget)
         main_layout.addWidget(self.duration_label)
-        main_layout.addWidget(self.scroll_label)
+        main_layout.addWidget(self.progress_bar)
+        main_layout.addWidget(self.song_label)
 
         central_widget = QWidget()
         central_widget.setLayout(main_layout)
@@ -107,6 +95,38 @@ class AudioPlayer(QMainWindow):
         central_widget = QWidget()
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
+        self.progress_bar.setStyleSheet("""
+        QProgressBar {
+            font-size: 1px;
+            color: #353535;
+            border-radius: 15px;
+        }
+        QProgressBar::chunk {
+            background-color: #6b47a5;  /* Измените "red" на желаемый цвет */
+            border-radius: 15px;
+        }
+        """)
+        self.song_label.setStyleSheet("""
+        QLabel {
+            color: #6b47a5;
+            font-weight:bold;
+        }
+        """)
+        self.duration_label.setStyleSheet("""
+        QLabel {
+            color: #6b47a5;  /* Замените "red" на желаемый цвет */
+            font-weight: bold;
+        }
+        """)
+
+        self.open_button.setStyleSheet("""
+        QPushButton {
+            letter-spacing: 2px;
+            font-weight: bold;
+            font-family: "Victoria";
+            color: pink;
+        }
+        """)
         # Стиль для элементов списка плейлиста
         self.playlist_widget.setStyleSheet("""
         QListWidget {
@@ -187,6 +207,7 @@ class AudioPlayer(QMainWindow):
             background-color: #5d3990;
         }
         """)
+
         # Стиль для полосы изменения громкости
         self.volume_slider.setStyleSheet("""
         QSlider::groove:horizontal {
@@ -222,7 +243,15 @@ class AudioPlayer(QMainWindow):
         self.search_input.setFixedHeight(20)
 
         # Уменьшение высоты кнопки поиска
-        self.search_button.setFixedHeight(20)
+        self.clear_button.setFixedHeight(20)
+
+        self.progress_bar.setFixedHeight(3)
+
+        self.seek_forward_button.clicked.connect(self.seek_forward)
+        self.seek_backward_button.clicked.connect(self.seek_backward)
+
+    def clear_search_input(self):
+        self.search_input.clear()
 
     def handle_media_status(self, status):
         if status == QMediaPlayer.EndOfMedia:
@@ -240,29 +269,48 @@ class AudioPlayer(QMainWindow):
         self.open_button.clicked.connect(self.open_folder)
         self.media_player.stateChanged.connect(self.update_buttons)
         self.playlist_widget.currentItemChanged.connect(self.change_track)
-        self.search_button.clicked.connect(self.filter_playlist)
+        self.search_input.textChanged.connect(self.filter_playlist)
+        self.clear_button.clicked.connect(self.clear_search_input)
 
+    def seek_forward(self):
+        position = self.media_player.position()
+        self.media_player.setPosition(position + 15000)  # Перемотка на 15 секунд вперед
+
+    def seek_backward(self):
+        position = self.media_player.position()
+        self.media_player.setPosition(position - 15000)  # Перемотка на 15 секунд назад
+        
     def play(self):
         if self.playing:
             self.media_player.pause()
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
         else:
             self.media_player.play()
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
 
     def stop(self):
         self.media_player.stop()
+        self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
 
     def previous(self):
-        self.current_index -= 1
-        if self.current_index < 0:
-            self.current_index = len(self.filtered_playlist) - 1
-        self.play_track()
+        if self.filtered_playlist:
+            self.current_index -= 1
+            if self.current_index < 0:
+                self.current_index = len(self.filtered_playlist) - 1
+            self.play_track()
+            self.update_playlist_selection()
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
+
 
     def next(self):
-        self.current_index += 1
-        if self.current_index >= len(self.filtered_playlist):
-            self.current_index = 0
-        self.play_track()
-        self.update_playlist_selection()
+        if self.filtered_playlist:
+            self.current_index += 1
+            if self.current_index >= len(self.filtered_playlist):
+                self.current_index = 0
+            self.play_track()
+            self.update_playlist_selection()
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
+
     
     def update_playlist_selection(self):
         # Снять выделение с предыдущего трека
@@ -284,6 +332,7 @@ class AudioPlayer(QMainWindow):
         self.media_playlist = []
         self.filtered_playlist = []
         self.playlist_widget.clear()
+        self.update_playlist_selection()
 
         for file_name in os.listdir(folder_path):
             if file_name.endswith(".mp3"):
@@ -297,22 +346,27 @@ class AudioPlayer(QMainWindow):
         self.playlist_widget.addItems(playlist_names)  # Передача списка имён песен вместо self.media_playlist
 
         self.current_index = 0
-        self.play_track()
+        if self.playing:
+            self.play_track()
 
     def change_track(self, current_item, previous_item):
         if current_item:
             self.current_index = self.playlist_widget.currentRow()
+            self.song_label.setText(current_item.text())
             self.play_track()
 
     def play_track(self):
-        if self.current_index >= 0 and self.current_index < len(self.filtered_playlist):
+        if self.filtered_playlist and self.current_index >= 0 and self.current_index < len(self.filtered_playlist):
             track_path = self.filtered_playlist[self.current_index].data(Qt.UserRole)
             media_content = QMediaContent(QUrl.fromLocalFile(track_path))
             self.media_player.setMedia(media_content)
             self.playing = True
             self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
             self.media_player.play()
             self.duration_timer.start()
+            self.update_playlist_selection()
+
 
     def update_buttons(self, state):
         if state == QMediaPlayer.PlayingState:
@@ -323,6 +377,27 @@ class AudioPlayer(QMainWindow):
             self.playing = False
             self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
             self.duration_timer.stop()
+        current_item = self.playlist_widget.currentItem()
+        if current_item:
+            self.song_label.setText(current_item.text())
+        else:
+            self.song_label.setText("")
+
+
+    def update_duration_label(self):
+        if self.media_player.duration() > 0:
+            duration = self.media_player.duration() / 1000
+            position = self.media_player.position() / 1000
+            current_item = self.playlist_widget.currentItem()
+            if current_item:
+                song_name = current_item.text()
+                self.duration_label.setText(
+                    f"{self.format_time(position)} / {self.format_time(duration)}"
+                )
+            else:
+                self.duration_label.setText(
+                    f"{self.format_time(position)} / {self.format_time(duration)}"
+                )
 
     def update_duration(self):
         if self.media_player.duration() > 0:
@@ -331,24 +406,49 @@ class AudioPlayer(QMainWindow):
             self.duration_label.setText(
                 f"{self.format_time(position)} / {self.format_time(duration)}"
             )
+            progress = int((position / duration) * 100)
+            self.progress_bar.setValue(progress)
+            QTimer.singleShot(10, self.update_duration)
+
+
+    def animate_duration_label(self):
+        animation = QPropertyAnimation(self.duration_label, b"text")
+        animation.setDuration(300)
+        animation.setStartValue(self.duration_label.text())
+        animation.setEndValue("00:00 / 00:00")
+        animation.start()
 
     def format_time(self, time_seconds):
         minutes = int(time_seconds / 60)
         seconds = int(time_seconds % 60)
         return f"{minutes:02d}:{seconds:02d}"
 
-    def filter_playlist(self):
-        keyword = self.search_input.text().lower()
+    def filter_playlist(self, keyword):
+        keyword = keyword.lower()
         if keyword:
             self.filtered_playlist = [
-                item for item in self.media_playlist if keyword in item.text().lower()
+                item for item in self.media_playlist if keyword.lower() in item.text().lower()
             ]
         else:
             self.filtered_playlist = self.media_playlist[:]
+
+        current_item = self.playlist_widget.currentItem()
+        current_track = current_item.data(Qt.UserRole) if current_item else None
         self.playlist_widget.clear()
-        self.playlist_widget.addItems(self.filtered_playlist)
-        self.current_index = 0
-        self.play_track()
+        self.playlist_widget.addItems([item.text() for item in self.filtered_playlist])
+        if current_track:
+            for index, item in enumerate(self.filtered_playlist):
+                if item.data(Qt.UserRole) == current_track:
+                    self.current_index = index
+                    self.play_track()
+                    break
+        else:
+            self.current_index = 0
+            self.play_track()
+
+        self.update_playlist_selection()
+
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -427,6 +527,9 @@ if __name__ == "__main__":
             padding: 5px;
             border: none;  /* Убираем границу элемента */
             border-radius: 15px;  /* Добавляем скругленные углы */
+            color: pink;
+            font-family: "Victoria";
+            font-weight: bold;
         }
 
         QListWidget::item:hover {
@@ -435,13 +538,6 @@ if __name__ == "__main__":
 
         QListWidget::item:selected {
             background-color: #6b47a8;
-        }
-
-        /* Стиль для метки текущей играющей песни */
-        QLabel#current_track_label {
-            color: #ffffff;
-            background-color: transparent;
-            border: none;
         }
     """)
 
