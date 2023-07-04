@@ -1,17 +1,50 @@
 import sys
 import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QSlider, QPushButton, QLabel, QWidget, QFileDialog, QStyle, QSizePolicy, QHBoxLayout, QListWidget, QAbstractItemView, QLineEdit, QListWidgetItem, QProgressBar
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QSlider, QPushButton, QLabel, QWidget, QFileDialog, QStyle, QSizePolicy, QHBoxLayout, QListWidget, QAbstractItemView, QLineEdit, QListWidgetItem, QProgressBar, QMenu
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from PyQt5.QtCore import Qt, QUrl, QTimer, pyqtSignal, QRect, QPropertyAnimation, QPoint, QEasingCurve, QObject
-from PyQt5.QtGui import QIcon, QPalette, QColor, QPainter, QLinearGradient
-
+from PyQt5.QtCore import Qt, QUrl, QTimer, pyqtSignal, QRect, QPropertyAnimation, QPoint, QEasingCurve, QObject, QLocale
+from PyQt5.QtGui import QIcon, QPalette, QColor, QPainter, QLinearGradient, QCursor
 from PyQt5.QtCore import QPropertyAnimation, QPoint
+import pickle
+
+TRANSLATIONS = {
+    "RUSSIAN": {
+        "window_title": "Audio Player",
+        "open_folder_button": "Открыть папку",
+        "menu_tr": "Меню",
+        "file_tr": "Файл",
+        "edit_tr": "Редактировать",
+        "view_tr": "Вид",
+        "help_tr": "Помощь",
+        "shuffle_tracks_tr": "Перемешать треки",
+        "open_folder_folders_button": "Открыть папку/папки",
+        "switch_language": "Сменить язык",
+    },
+    "ENGLISH": {
+        "window_title": "Audio Player",
+        "open_folder_button": "Open Folder",
+        "menu_tr": "Menu",
+        "file_tr": "File",
+        "edit_tr": "Edit",
+        "view_tr": "View",
+        "help_tr": "Help",
+        "shuffle_tracks_tr": "Shuffle tracks",
+        "open_folder_folders_button": "Open folder/folders",
+        "switch_language": "Switch language",
+    },
+}
 
 class AudioPlayer(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.current_language = "RUSSIAN"
+        try:
+            with open("language.pickle", "rb") as f:
+                self.current_language = pickle.load(f)
+        except FileNotFoundError:
+            self.current_language = "RUSSIAN"
 
-        self.setWindowTitle("Audio Player")
+        self.setWindowTitle(TRANSLATIONS[self.current_language]["window_title"])
         self.setWindowIcon(QIcon("ico.ico"))
         self.setGeometry(100, 100, 600, 400)
 
@@ -20,6 +53,7 @@ class AudioPlayer(QMainWindow):
         self.filtered_playlist = []
         self.current_index = 0
         self.setup_ui()
+        self.setup_menu()
         self.setup_player()
         self.setup_signals()
 
@@ -41,7 +75,7 @@ class AudioPlayer(QMainWindow):
         self.stop_button = QPushButton()
         self.previous_button = QPushButton()
         self.next_button = QPushButton()
-        self.open_button = QPushButton("Open Folder")
+        self.open_button = QPushButton(TRANSLATIONS[self.current_language]["open_folder_button"])
         self.playlist_widget = QListWidget()
         self.playlist_widget.setSelectionMode(QAbstractItemView.SingleSelection)
         self.playlist_widget.setSpacing(5)
@@ -250,6 +284,93 @@ class AudioPlayer(QMainWindow):
         self.seek_forward_button.clicked.connect(self.seek_forward)
         self.seek_backward_button.clicked.connect(self.seek_backward)
 
+    def setup_menu(self):
+        self.menu_bar = self.menuBar()
+        self.menu_bar.setStyleSheet("""
+        QMenuBar {
+            background-color: #353535;
+            color: pink;
+            font-weight: bold;
+        }
+
+        QMenuBar::item {
+            spacing: 3px;
+            padding: 3px 10px;
+            background-color: transparent;
+            border-radius: 5px;
+        }
+
+        QMenuBar::item:selected {
+            border: 1px solid #6b47a8;
+        }
+
+        QMenu {
+            background-color: #353535;
+            color: pink;
+            border: 1px solid #6b47a8;
+            margin: 2px;
+        }
+
+        QMenu::item {
+            padding: 5px 30px;
+        }
+
+        QMenu::item:selected {
+            border: 1px solid pink;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        QMenu::separator {
+            height: 1px;
+            background-color: #6b47a8;
+            margin-left: 10px;
+            margin-right: 5px;
+        }
+        """)
+
+        # Создание меню
+        menu = self.menuBar().addMenu(TRANSLATIONS[self.current_language]["menu_tr"])
+        file_menu = self.menu_bar.addMenu((TRANSLATIONS[self.current_language]["file_tr"]))
+        edit_menu = self.menu_bar.addMenu((TRANSLATIONS[self.current_language]["edit_tr"]))
+        view_menu = self.menu_bar.addMenu((TRANSLATIONS[self.current_language]["view_tr"]))
+        help_menu = self.menu_bar.addMenu((TRANSLATIONS[self.current_language]["help_tr"]))
+
+        shuffle_action = menu.addAction((TRANSLATIONS[self.current_language]["shuffle_tracks_tr"]))
+        shuffle_action.triggered.connect(self.shuffle_tracks)
+
+        open_folder_action = file_menu.addAction((TRANSLATIONS[self.current_language]["open_folder_folders_button"]))
+        open_folder_action.triggered.connect(self.open_folder)
+
+        switch_language_action = view_menu.addAction((TRANSLATIONS[self.current_language]["switch_language"]))
+        switch_language_action.triggered.connect(self.switch_language)
+
+        # Добавьте другие действия меню и подключите их к соответствующим функциям
+
+    def shuffle_tracks(self):
+        import random
+        random.shuffle(self.filtered_playlist)
+        self.playlist_widget.clear()
+        self.playlist_widget.addItems([item.text() for item in self.filtered_playlist])
+        self.current_index = 0
+        self.play_track()
+        self.update_playlist_selection()
+        self.song_label.setText(self.filtered_playlist[self.current_index].text())
+
+    def switch_language(self):
+        if self.current_language == "RUSSIAN":
+            self.current_language = "ENGLISH"
+        else:
+            self.current_language = "RUSSIAN"
+
+        # Сохранение значения переменной current_language в файл
+        with open("language.pickle", "wb") as f:
+            pickle.dump(self.current_language, f)
+
+        # Перезапуск программы
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
+
     def clear_search_input(self):
         self.search_input.clear()
 
@@ -324,9 +445,15 @@ class AudioPlayer(QMainWindow):
             current_item.setSelected(True)
 
     def open_folder(self):
-        folder_path = QFileDialog.getExistingDirectory(self, "Open Folder")
-        if folder_path:
-            self.load_playlist(folder_path)
+        folder_dialog = QFileDialog()
+        folder_dialog.setFileMode(QFileDialog.Directory)
+        folder_dialog.setOption(QFileDialog.ShowDirsOnly)
+
+        if folder_dialog.exec_():
+            folder_paths = folder_dialog.selectedFiles()
+            for folder_path in folder_paths:
+                self.load_playlist(folder_path)
+
 
     def load_playlist(self, folder_path):
         self.media_playlist = []
@@ -334,16 +461,17 @@ class AudioPlayer(QMainWindow):
         self.playlist_widget.clear()
         self.update_playlist_selection()
 
-        for file_name in os.listdir(folder_path):
-            if file_name.endswith(".mp3"):
-                full_path = os.path.join(folder_path, file_name)
-                item = QListWidgetItem(file_name)
-                item.setData(Qt.UserRole, full_path)
-                self.media_playlist.append(item)
-                self.filtered_playlist.append(item.clone())
+        for root, dirs, files in os.walk(folder_path):
+            for file_name in files:
+                if file_name.endswith(".mp3"):
+                    full_path = os.path.join(root, file_name)
+                    item = QListWidgetItem(file_name)
+                    item.setData(Qt.UserRole, full_path)
+                    self.media_playlist.append(item)
+                    self.filtered_playlist.append(item.clone())
 
-        playlist_names = [item.text() for item in self.media_playlist]  # Получение списка имён песен
-        self.playlist_widget.addItems(playlist_names)  # Передача списка имён песен вместо self.media_playlist
+        playlist_names = [item.text() for item in self.media_playlist]
+        self.playlist_widget.addItems(playlist_names)
 
         self.current_index = 0
         if self.playing:
@@ -383,22 +511,6 @@ class AudioPlayer(QMainWindow):
         else:
             self.song_label.setText("")
 
-
-    def update_duration_label(self):
-        if self.media_player.duration() > 0:
-            duration = self.media_player.duration() / 1000
-            position = self.media_player.position() / 1000
-            current_item = self.playlist_widget.currentItem()
-            if current_item:
-                song_name = current_item.text()
-                self.duration_label.setText(
-                    f"{self.format_time(position)} / {self.format_time(duration)}"
-                )
-            else:
-                self.duration_label.setText(
-                    f"{self.format_time(position)} / {self.format_time(duration)}"
-                )
-
     def update_duration(self):
         if self.media_player.duration() > 0:
             duration = self.media_player.duration() / 1000
@@ -409,14 +521,6 @@ class AudioPlayer(QMainWindow):
             progress = int((position / duration) * 100)
             self.progress_bar.setValue(progress)
             QTimer.singleShot(10, self.update_duration)
-
-
-    def animate_duration_label(self):
-        animation = QPropertyAnimation(self.duration_label, b"text")
-        animation.setDuration(300)
-        animation.setStartValue(self.duration_label.text())
-        animation.setEndValue("00:00 / 00:00")
-        animation.start()
 
     def format_time(self, time_seconds):
         minutes = int(time_seconds / 60)
