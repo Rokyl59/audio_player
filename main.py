@@ -5,7 +5,6 @@ from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl, QTimer, pyqtSignal, QRect, QPropertyAnimation, QPoint, QEasingCurve, QObject, QLocale
 from PyQt5.QtGui import QIcon, QPalette, QColor, QPainter, QLinearGradient, QCursor
 from PyQt5.QtCore import QPropertyAnimation, QPoint
-import pickle
 
 TRANSLATIONS = {
     "RUSSIAN": {
@@ -63,6 +62,8 @@ class AudioPlayer(QMainWindow):
 
         self.playing = False  # Флаг состояния воспроизведения
         self.media_player.mediaStatusChanged.connect(self.handle_media_status)
+
+        self.update_translations()
 
     def setup_ui(self):
         self.progress_bar = QProgressBar()
@@ -347,6 +348,18 @@ class AudioPlayer(QMainWindow):
 
         # Добавьте другие действия меню и подключите их к соответствующим функциям
 
+    def update_translations(self):
+        self.setWindowTitle(TRANSLATIONS[self.current_language]["window_title"])
+        self.open_button.setText(TRANSLATIONS[self.current_language]["open_folder_button"])
+        self.menu_bar.actions()[0].setText(TRANSLATIONS[self.current_language]["menu_tr"])
+        self.menu_bar.actions()[1].setText(TRANSLATIONS[self.current_language]["file_tr"])
+        self.menu_bar.actions()[2].setText(TRANSLATIONS[self.current_language]["edit_tr"])
+        self.menu_bar.actions()[3].setText(TRANSLATIONS[self.current_language]["view_tr"])
+        self.menu_bar.actions()[4].setText(TRANSLATIONS[self.current_language]["help_tr"])
+        self.menu_bar.actions()[3].menu().actions()[0].setText(TRANSLATIONS[self.current_language]["switch_language"])
+        self.menu_bar.actions()[0].menu().actions()[0].setText(TRANSLATIONS[self.current_language]["shuffle_tracks_tr"])
+        self.menu_bar.actions()[1].menu().actions()[0].setText(TRANSLATIONS[self.current_language]["open_folder_folders_button"])
+
     def shuffle_tracks(self):
         import random
         random.shuffle(self.filtered_playlist)
@@ -363,13 +376,7 @@ class AudioPlayer(QMainWindow):
         else:
             self.current_language = "RUSSIAN"
 
-        # Сохранение значения переменной current_language в файл
-        with open("language.pickle", "wb") as f:
-            pickle.dump(self.current_language, f)
-
-        # Перезапуск программы
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
+        self.update_translations()
 
     def clear_search_input(self):
         self.search_input.clear()
