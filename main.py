@@ -1,10 +1,14 @@
 import sys
 import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QSlider, QPushButton, QLabel, QWidget, QFileDialog, QStyle, QSizePolicy, QHBoxLayout, QListWidget, QAbstractItemView, QLineEdit, QListWidgetItem, QProgressBar, QMenu
+import pickle 
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QSlider, QPushButton, QLabel, QWidget, QFileDialog, QStyle, QSizePolicy, QHBoxLayout, QListWidget, QAbstractItemView, QLineEdit, QListWidgetItem, QProgressBar, QMenu, QMessageBox
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl, QTimer, pyqtSignal, QRect, QPropertyAnimation, QPoint, QEasingCurve, QObject, QLocale
 from PyQt5.QtGui import QIcon, QPalette, QColor, QPainter, QLinearGradient, QCursor
 from PyQt5.QtCore import QPropertyAnimation, QPoint
+from pydub import AudioSegment
+from pydub.playback import play
+import random
 
 TRANSLATIONS = {
     "RUSSIAN": {
@@ -18,6 +22,8 @@ TRANSLATIONS = {
         "shuffle_tracks_tr": "Перемешать треки",
         "open_folder_folders_button": "Открыть папку/папки",
         "switch_language": "Сменить язык",
+        "msg_no_tracks_message": "В плейлисте не было найдено ни одного трека.",
+        "msg_information": "Информация",
     },
     "ENGLISH": {
         "window_title": "Audio Player",
@@ -30,6 +36,8 @@ TRANSLATIONS = {
         "shuffle_tracks_tr": "Shuffle tracks",
         "open_folder_folders_button": "Open folder/folders",
         "switch_language": "Switch language",
+        "msg_no_tracks_message": "No tracks were found in the playlist.",
+        "msg_information": "Information",
     },
 }
 
@@ -37,11 +45,16 @@ class AudioPlayer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.current_language = "RUSSIAN"
+        self.current_folder = ""
+        self.current_index = 0
+
+        if not os.path.exists("settings.pickle"):
+            self.save_settings()
+
         try:
-            with open("language.pickle", "rb") as f:
-                self.current_language = pickle.load(f)
+            self.load_settings()
         except FileNotFoundError:
-            self.current_language = "RUSSIAN"
+            pass
 
         self.setWindowTitle(TRANSLATIONS[self.current_language]["window_title"])
         self.setWindowIcon(QIcon("ico.ico"))
@@ -57,13 +70,25 @@ class AudioPlayer(QMainWindow):
         self.setup_signals()
 
         self.duration_timer = QTimer()
-        self.duration_timer.setInterval(1000)  # Update duration every second
+        self.duration_timer.setInterval(1000)  
         self.duration_timer.timeout.connect(self.update_duration)
 
         self.playing = False  # Флаг состояния воспроизведения
         self.media_player.mediaStatusChanged.connect(self.handle_media_status)
 
         self.update_translations()
+
+        if self.current_folder:
+            self.load_playlist(self.current_folder)
+            self.playlist_widget.setCurrentRow(self.current_index)
+            self.play_track()
+
+        # Загрузка сохраненных настроек при запуске программы
+        self.load_settings()
+
+        self.media_player.setMedia(QMediaContent())  
+        self.playing = False  # Сброс флага состояния воспроизведения
+        self.update_buttons(self.media_player.state())  
 
     def setup_ui(self):
         self.progress_bar = QProgressBar()
@@ -82,7 +107,7 @@ class AudioPlayer(QMainWindow):
         self.playlist_widget.setSpacing(5)
         self.search_input = QLineEdit()
         self.clear_button = QPushButton()
-        self.clear_button.setIcon(QIcon("search.png"))  # Замените "clear.png" на путь к вашей иконке стирания
+        self.clear_button.setIcon(QIcon("search.png"))  
         self.duration_label = QLabel("00:00 / 00:00")
         self.seek_forward_button = QPushButton()
         self.seek_backward_button = QPushButton()
@@ -292,6 +317,7 @@ class AudioPlayer(QMainWindow):
             background-color: #353535;
             color: pink;
             font-weight: bold;
+            border-radius: 8px;
         }
 
         QMenuBar::item {
@@ -303,21 +329,23 @@ class AudioPlayer(QMainWindow):
 
         QMenuBar::item:selected {
             border: 1px solid #6b47a8;
+            border-radius: 8px;
         }
 
         QMenu {
             background-color: #353535;
             color: pink;
-            border: 1px solid #6b47a8;
             margin: 2px;
+            border-radius: 8px;
         }
 
         QMenu::item {
             padding: 5px 30px;
+            border-radius: 8px;
         }
 
         QMenu::item:selected {
-            border: 1px solid pink;
+            border: 1px solid #6b47a8;
             border-radius: 8px;
             font-weight: bold;
         }
@@ -327,6 +355,7 @@ class AudioPlayer(QMainWindow):
             background-color: #6b47a8;
             margin-left: 10px;
             margin-right: 5px;
+            border-radius: 8px;
         }
         """)
 
@@ -362,13 +391,24 @@ class AudioPlayer(QMainWindow):
 
     def shuffle_tracks(self):
         import random
-        random.shuffle(self.filtered_playlist)
-        self.playlist_widget.clear()
-        self.playlist_widget.addItems([item.text() for item in self.filtered_playlist])
-        self.current_index = 0
-        self.play_track()
-        self.update_playlist_selection()
-        self.song_label.setText(self.filtered_playlist[self.current_index].text())
+        if self.filtered_playlist and self.current_index >= 0 and self.current_index < len(self.filtered_playlist):
+            random.shuffle(self.filtered_playlist)
+            self.playlist_widget.clear()
+            self.playlist_widget.addItems([item.text() for item in self.filtered_playlist])
+            self.current_index = 0
+            self.play_track()
+            self.update_playlist_selection()
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())
+        else:
+            self.msg = QMessageBox()
+            self.msg.setIcon(QMessageBox.Information)
+            self.msg.setWindowIcon(QIcon("ico.ico"))
+            self.msg.setText(TRANSLATIONS[self.current_language]["msg_information"])
+            self.msg.setInformativeText(TRANSLATIONS[self.current_language]["msg_no_tracks_message"])
+            self.msg.setWindowTitle(TRANSLATIONS[self.current_language]["window_title"])
+            self.msg.setStandardButtons(QMessageBox.Ok)  # Изменить кнопку на "OK"
+            self.update_translations()
+            self.msg.exec_()
 
     def switch_language(self):
         if self.current_language == "RUSSIAN":
@@ -411,10 +451,10 @@ class AudioPlayer(QMainWindow):
     def play(self):
         if self.playing:
             self.media_player.pause()
-            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())  
         else:
             self.media_player.play()
-            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())  
 
     def stop(self):
         self.media_player.stop()
@@ -427,8 +467,7 @@ class AudioPlayer(QMainWindow):
                 self.current_index = len(self.filtered_playlist) - 1
             self.play_track()
             self.update_playlist_selection()
-            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
-
+            self.song_label.setText(self.filtered_playlist[self.current_index].text())  
 
     def next(self):
         if self.filtered_playlist:
@@ -437,9 +476,8 @@ class AudioPlayer(QMainWindow):
                 self.current_index = 0
             self.play_track()
             self.update_playlist_selection()
-            self.song_label.setText(self.filtered_playlist[self.current_index].text())  # Обновление названия трека
+            self.song_label.setText(self.filtered_playlist[self.current_index].text()) 
 
-    
     def update_playlist_selection(self):
         # Снять выделение с предыдущего трека
         previous_item = self.playlist_widget.item(self.current_index - 1)
@@ -450,17 +488,6 @@ class AudioPlayer(QMainWindow):
         current_item = self.playlist_widget.item(self.current_index)
         if current_item:
             current_item.setSelected(True)
-
-    def open_folder(self):
-        folder_dialog = QFileDialog()
-        folder_dialog.setFileMode(QFileDialog.Directory)
-        folder_dialog.setOption(QFileDialog.ShowDirsOnly)
-
-        if folder_dialog.exec_():
-            folder_paths = folder_dialog.selectedFiles()
-            for folder_path in folder_paths:
-                self.load_playlist(folder_path)
-
 
     def load_playlist(self, folder_path):
         self.media_playlist = []
@@ -476,7 +503,7 @@ class AudioPlayer(QMainWindow):
                     item.setData(Qt.UserRole, full_path)
                     self.media_playlist.append(item)
                     self.filtered_playlist.append(item.clone())
-
+                    
         playlist_names = [item.text() for item in self.media_playlist]
         self.playlist_widget.addItems(playlist_names)
 
@@ -501,7 +528,6 @@ class AudioPlayer(QMainWindow):
             self.media_player.play()
             self.duration_timer.start()
             self.update_playlist_selection()
-
 
     def update_buttons(self, state):
         if state == QMediaPlayer.PlayingState:
@@ -551,15 +577,53 @@ class AudioPlayer(QMainWindow):
             for index, item in enumerate(self.filtered_playlist):
                 if item.data(Qt.UserRole) == current_track:
                     self.current_index = index
-                    self.play_track()
                     break
         else:
             self.current_index = 0
-            self.play_track()
 
         self.update_playlist_selection()
 
+    def load_settings(self):
+        with open("settings.pickle", "rb") as f:
+            settings = pickle.load(f)
+            self.current_language = settings["current_language"]
+            self.current_folder = settings["current_folder"]
+            self.current_index = settings["current_index"]
+            
+    def save_settings(self):
+        settings = {
+            "current_language": self.current_language,
+            "current_folder": self.current_folder,
+            "current_index": self.current_index,
+        }
+        with open("settings.pickle", "wb") as f:
+            pickle.dump(settings, f)
 
+    def open_folder(self):
+        folder_dialog = QFileDialog()
+        folder_dialog.setFileMode(QFileDialog.Directory)
+        folder_dialog.setOption(QFileDialog.ShowDirsOnly)
+
+        if folder_dialog.exec_():
+            folder_paths = folder_dialog.selectedFiles()
+            for folder_path in folder_paths:
+                self.current_folder = folder_path
+                self.save_settings()
+
+            if self.current_folder:
+                self.load_playlist(folder_path)
+                self.current_index = 0
+                self.playlist_widget.setCurrentRow(self.current_index)
+
+                self.media_player.setMedia(QMediaContent()) 
+                self.playing = False  # Сброс флага состояния воспроизведения
+                self.update_buttons(self.media_player.state()) 
+            else:
+                self.playlist_widget.clear()
+
+    def closeEvent(self, event):
+        self.save_settings()
+        event.accept()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
