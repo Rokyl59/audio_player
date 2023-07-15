@@ -6,45 +6,13 @@ from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl, QTimer, pyqtSignal, QRect, QPropertyAnimation, QPoint, QEasingCurve, QObject, QLocale
 from PyQt5.QtGui import QIcon, QPalette, QColor, QPainter, QLinearGradient, QCursor
 from PyQt5.QtCore import QPropertyAnimation, QPoint
-from pydub import AudioSegment
-from pydub.playback import play
 import random
-
-TRANSLATIONS = {
-    "RUSSIAN": {
-        "window_title": "Audio Player",
-        "open_folder_button": "Открыть папку",
-        "menu_tr": "Меню",
-        "file_tr": "Файл",
-        "edit_tr": "Редактировать",
-        "view_tr": "Вид",
-        "help_tr": "Помощь",
-        "shuffle_tracks_tr": "Перемешать треки",
-        "open_folder_folders_button": "Открыть папку/папки",
-        "switch_language": "Сменить язык",
-        "msg_no_tracks_message": "В плейлисте не было найдено ни одного трека.",
-        "msg_information": "Информация",
-    },
-    "ENGLISH": {
-        "window_title": "Audio Player",
-        "open_folder_button": "Open Folder",
-        "menu_tr": "Menu",
-        "file_tr": "File",
-        "edit_tr": "Edit",
-        "view_tr": "View",
-        "help_tr": "Help",
-        "shuffle_tracks_tr": "Shuffle tracks",
-        "open_folder_folders_button": "Open folder/folders",
-        "switch_language": "Switch language",
-        "msg_no_tracks_message": "No tracks were found in the playlist.",
-        "msg_information": "Information",
-    },
-}
+from translations import *
 
 class AudioPlayer(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.current_language = "RUSSIAN"
+        self.current_language = "ENGLISH"
         self.current_folder = ""
         self.current_index = 0
 
@@ -108,9 +76,14 @@ class AudioPlayer(QMainWindow):
         self.search_input = QLineEdit()
         self.clear_button = QPushButton()
         self.clear_button.setIcon(QIcon("search.png"))  
-        self.duration_label = QLabel("00:00 / 00:00")
+        self.duration_label = QLabel("00:00")
+        self.duration_label_two = QLabel("00:00")
         self.seek_forward_button = QPushButton()
         self.seek_backward_button = QPushButton()
+        # Добавление ползунка положения позиции воспроизведения
+        self.position_slider = QSlider(Qt.Horizontal)
+        self.position_slider.setRange(0, 0)
+        self.position_slider.sliderMoved.connect(self.set_position)
         self.song_label = QLabel()
 
         self.seek_forward_button.setIcon(self.style().standardIcon(QStyle.SP_MediaSeekForward))
@@ -134,15 +107,18 @@ class AudioPlayer(QMainWindow):
         search_layout.addWidget(self.search_input)
         search_layout.addWidget(self.clear_button)
 
+        position_duration = QHBoxLayout()
+        position_duration.addWidget(self.duration_label)
+        position_duration.addWidget(self.position_slider) # Можете использовать addWidget(self.progress_bar)
+        position_duration.addWidget(self.duration_label_two)
 
         main_layout.addWidget(self.open_button)
-        main_layout.addLayout(control_layout)
         main_layout.addWidget(self.volume_slider)
         main_layout.addLayout(search_layout)
         main_layout.addWidget(self.playlist_widget)
-        main_layout.addWidget(self.duration_label)
-        main_layout.addWidget(self.progress_bar)
         main_layout.addWidget(self.song_label)
+        main_layout.addLayout(position_duration)
+        main_layout.addLayout(control_layout)
 
         central_widget = QWidget()
         central_widget.setLayout(main_layout)
@@ -155,209 +131,53 @@ class AudioPlayer(QMainWindow):
         central_widget = QWidget()
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
-        self.progress_bar.setStyleSheet("""
-        QProgressBar {
-            font-size: 1px;
-            color: #353535;
-            border-radius: 15px;
-        }
-        QProgressBar::chunk {
-            background-color: #6b47a5;  /* Измените "red" на желаемый цвет */
-            border-radius: 15px;
-        }
-        """)
-        self.song_label.setStyleSheet("""
-        QLabel {
-            color: #6b47a5;
-            font-weight:bold;
-        }
-        """)
-        self.duration_label.setStyleSheet("""
-        QLabel {
-            color: #6b47a5;  /* Замените "red" на желаемый цвет */
-            font-weight: bold;
-        }
-        """)
-
-        self.open_button.setStyleSheet("""
-        QPushButton {
-            letter-spacing: 2px;
-            font-weight: bold;
-            font-family: "Victoria";
-            color: pink;
-        }
-        """)
+        self.progress_bar.setObjectName("progress_bar")
+        self.progress_bar.setStyleSheet(open("styles.qss").read())
+        self.song_label.setObjectName("song_label")
+        self.song_label.setStyleSheet(open("styles.qss").read())
+        self.duration_label.setObjectName("duration_label")
+        self.duration_label_two.setObjectName("duration_label")
+        self.duration_label.setStyleSheet(open("styles.qss").read())
+        self.open_button.setObjectName("open_button")
+        self.open_button.setStyleSheet(open("styles.qss").read())
         # Стиль для элементов списка плейлиста
-        self.playlist_widget.setStyleSheet("""
-        QListWidget {
-            background-color: #353535;
-            padding: 5px;
-            border: none;
-            border-radius: 10px;
-        }
-
-        QListWidget::item {
-            background-color: #353535;
-            padding: 5px;
-            border: none;
-            border-radius: 10px;
-        }
-
-        QListWidget::item:hover {
-            background-color: #5d3990;
-        }
-
-        QListWidget::item:selected {
-            background-color: #6b47a8;
-        }
-        """)
-
+        self.playlist_widget.setObjectName("playlist_widget")
+        self.playlist_widget.setStyleSheet(open("styles.qss").read())
         # Стиль для полосы прокрутки
-        self.playlist_widget.verticalScrollBar().setStyleSheet("""
-        QScrollBar:vertical {
-            background-color: #3f3f3f;
-            width: 15px;
-            border-radius: 7px;
-        }
-
-        QScrollBar::handle:vertical {
-            background-color: #6b47a8;
-            border-radius: 7px;
-        }
-
-        QScrollBar::handle:vertical:hover {
-            background-color: #5d3990;
-        }
-
-        QScrollBar::sub-line:vertical,
-        QScrollBar::add-line:vertical {
-            background-color: #3f3f3f;
-            height: 15px;
-            border-radius: 7px;
-        }
-
-        QScrollBar::sub-line:vertical:hover,
-        QScrollBar::add-line:vertical:hover {
-            background-color: #5d3990;
-        }
-        """)
-        self.playlist_widget.horizontalScrollBar().setStyleSheet("""
-        QScrollBar:horizontal {
-            background-color: #3f3f3f;
-            border-radius: 7px;
-        }
-
-        QScrollBar::handle:horizontal {
-            background-color: #6b47a8;
-            border-radius: 7px;
-        }
-
-        QScrollBar::handle:horizontal:hover {
-            background-color: #5d3990;
-        }
-
-        QScrollBar::sub-line:horizontal,
-        QScrollBar::add-line:horizontal {
-            background-color: #3f3f3f;
-            border-radius: 7px;
-        }
-
-        QScrollBar::sub-line:horizontal:hover,
-        QScrollBar::add-line:horizontal:hover {
-            background-color: #5d3990;
-        }
-        """)
+        self.playlist_widget.verticalScrollBar().setObjectName("playlist_widget")
+        self.playlist_widget.verticalScrollBar().setStyleSheet(open("styles.qss").read())
+        self.playlist_widget.horizontalScrollBar().setObjectName("playlist_widget")
+        self.playlist_widget.horizontalScrollBar().setStyleSheet(open("styles.qss").read())
 
         # Стиль для полосы изменения громкости
-        self.volume_slider.setStyleSheet("""
-        QSlider::groove:horizontal {
-            background-color: grey;
-            height: 4px;
-            border-radius: 2px;
-        }
+        self.volume_slider.setObjectName("volume_slider")
+        self.volume_slider.setStyleSheet(open("styles.qss").read())
 
-        QSlider::sub-page:horizontal {
-            background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                              stop:0 #8a2be2, stop:1 #800080);
-            border-radius: 2px;
-        }
-
-        QSlider::handle:horizontal {
-            background-color: #ffffff;
-            border: none;
-            width: 10px;
-            height: 10px;
-            margin: -3px 0;
-            border-radius: 5px;
-        }
-        """)
+        # Стиль для полосы изменения воспроизведения
+        self.position_slider.setObjectName("position_slider")
+        self.position_slider.setStyleSheet(open("styles.qss").read())
         # Стиль для поля ввода поиска
-        self.search_input.setStyleSheet("""
-        QLineEdit {
-            background-color: #6b47a8;
-            border-radius: 5px;
-            padding: 5px;
-        }
-        """)
+        self.search_input.setObjectName("search_input")
+        self.search_input.setStyleSheet(open("styles.qss").read())
          # Уменьшение высоты поля ввода поиска
         self.search_input.setFixedHeight(20)
 
         # Уменьшение высоты кнопки поиска
         self.clear_button.setFixedHeight(20)
+        self.song_label.setFixedHeight(15)
 
         self.progress_bar.setFixedHeight(3)
 
         self.seek_forward_button.clicked.connect(self.seek_forward)
         self.seek_backward_button.clicked.connect(self.seek_backward)
 
+    def set_position(self, position):
+        self.media_player.setPosition(position * 1000)  # Установка новой позиции в миллисекундах
+
     def setup_menu(self):
         self.menu_bar = self.menuBar()
-        self.menu_bar.setStyleSheet("""
-        QMenuBar {
-            background-color: #353535;
-            color: pink;
-            font-weight: bold;
-            border-radius: 8px;
-        }
-
-        QMenuBar::item {
-            spacing: 3px;
-            padding: 3px 10px;
-            background-color: transparent;
-            border-radius: 5px;
-        }
-
-        QMenuBar::item:selected {
-            border: 1px solid #6b47a8;
-            border-radius: 8px;
-        }
-
-        QMenu {
-            background-color: #353535;
-            color: pink;
-            margin: 2px;
-            border-radius: 8px;
-        }
-
-        QMenu::item {
-            padding: 5px 30px;
-            border-radius: 8px;
-        }
-
-        QMenu::item:selected {
-            border: 1px solid #6b47a8;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-
-        QMenu::separator {
-            height: 1px;
-            background-color: #6b47a8;
-            margin-left: 10px;
-            margin-right: 5px;
-            border-radius: 8px;
-        }
-        """)
+        self.menu_bar.setObjectName("menu_bar")
+        self.menu_bar.setStyleSheet(open("styles.qss").read())
 
         # Создание меню
         menu = self.menuBar().addMenu(TRANSLATIONS[self.current_language]["menu_tr"])
@@ -439,6 +259,7 @@ class AudioPlayer(QMainWindow):
         self.playlist_widget.currentItemChanged.connect(self.change_track)
         self.search_input.textChanged.connect(self.filter_playlist)
         self.clear_button.clicked.connect(self.clear_search_input)
+        self.position_slider.sliderMoved.connect(self.set_position)
 
     def seek_forward(self):
         position = self.media_player.position()
@@ -549,10 +370,15 @@ class AudioPlayer(QMainWindow):
             duration = self.media_player.duration() / 1000
             position = self.media_player.position() / 1000
             self.duration_label.setText(
-                f"{self.format_time(position)} / {self.format_time(duration)}"
+                f"{self.format_time(position)}"
+            )
+            self.duration_label_two.setText(
+                f"{self.format_time(duration)}"
             )
             progress = int((position / duration) * 100)
             self.progress_bar.setValue(progress)
+            self.position_slider.setRange(0, int(duration))
+            self.position_slider.setValue(int(position))
             QTimer.singleShot(10, self.update_duration)
 
     def format_time(self, time_seconds):
@@ -645,76 +471,7 @@ if __name__ == "__main__":
     dark_palette.setColor(QPalette.HighlightedText, Qt.black)
 
     app.setPalette(dark_palette)  # Установка темной палитры цветов
-
-    app.setStyleSheet("""
-        /* Основной стиль для всего приложения */
-        QWidget {
-            background-color: #353535;
-            color: #ffffff;
-        }
-
-        /* Стиль для кнопок */
-        QPushButton {
-            background-color: #6b47a8;
-            color: #ffffff;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 15px;  /* Добавляем скругленные углы */
-        }
-
-        QPushButton:hover {
-            background-color: #5d3990;
-        }
-
-        QPushButton:pressed {
-            background-color: #4e3278;
-        }
-
-        /* Стиль для панели прокрутки */
-        QScrollBar:vertical {
-            background-color: #3f3f3f;
-            width: 15px;
-            border-radius: 15px;  /* Добавляем скругленные углы */
-        }
-
-        QScrollBar::handle:vertical {
-            background-color: #6b47a8;
-            border-radius: 15px;  /* Добавляем скругленные углы */
-        }
-
-        QScrollBar::handle:vertical:hover {
-            background-color: #5d3990;
-        }
-
-        QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical {
-            background-color: #3f3f3f;
-            height: 15px;
-            border-radius: 15px;  /* Добавляем скругленные углы */
-        }
-
-        QScrollBar::sub-line:vertical:hover, QScrollBar::add-line:vertical:hover {
-            background-color: #5d3990;
-        }
-
-        /* Стиль для элементов списка плейлиста */
-        QListWidget::item {
-            background-color: #353535;
-            padding: 5px;
-            border: none;  /* Убираем границу элемента */
-            border-radius: 15px;  /* Добавляем скругленные углы */
-            color: pink;
-            font-family: "Victoria";
-            font-weight: bold;
-        }
-
-        QListWidget::item:hover {
-            background-color: #5d3990;
-        }
-
-        QListWidget::item:selected {
-            background-color: #6b47a8;
-        }
-    """)
+    app.setStyleSheet(open("styles.qss").read())
 
     window = AudioPlayer()
     window.show()
