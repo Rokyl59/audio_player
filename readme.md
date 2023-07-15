@@ -1,6 +1,10 @@
 # Аудио плеер V3.0.1(Русский)
 Эта программа представляет собой аудиоплеер с использованием библиотеки PyQt5. Она позволяет пользователю открывать папки, в которых содержатся аудиофайлы формата MP3, создавать плейлисты и проигрывать выбранные треки. Программа имеет графический интерфейс, включающий кнопки управления воспроизведением (воспроизведение, пауза, остановка, переключение на предыдущий и следующий трек), ползунок громкости, поиск треков, отображение текущего трека и длительности проигрывания.
 
+![Снимок экрана 2023-07-15 212823](https://github.com/Rokyl59/audio_player/assets/133006108/df31d814-59fb-49ec-bcd5-a44f2e1d07f6)
+![Снимок экрана 2023-07-15 213302](https://github.com/Rokyl59/audio_player/assets/133006108/d9bbb9e3-b00c-4081-8c90-eb645c4ea4fa)
+
+
 ## Основные функции программы:
 
 - Открытие папки с аудиофайлами формата MP3.
@@ -53,6 +57,9 @@
 
 # Audio Player V3.0.1(English)
 This program is an audio player using the PyQt5 library. It allows the user to open folders containing MP3 audio files, create playlists and play selected tracks. The program has a graphical interface that includes playback control buttons (playback, pause, stop, switch to the previous and next track), a volume slider, track search, display of the current track and the duration of playback.
+
+![Снимок экрана 2023-07-15 212823](https://github.com/Rokyl59/audio_player/assets/133006108/df31d814-59fb-49ec-bcd5-a44f2e1d07f6)
+![Снимок экрана 2023-07-15 213302](https://github.com/Rokyl59/audio_player/assets/133006108/d9bbb9e3-b00c-4081-8c90-eb645c4ea4fa)
 
 ## The main functions of the program:
 
