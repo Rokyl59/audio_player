@@ -1,2 +1,7 @@
-settings.pickle
 /__pycache__
+/functions/__pycache__
+/other/__pycache__
+/translations/__pycache__
+/build
+/dist
+/.vscode

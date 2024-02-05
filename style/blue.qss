@@ -1,0 +1,551 @@
+QMenu {
+    background-color: #353535;
+    color: white;
+    margin: 2px;
+    border-radius: 8px;
+}
+
+QMenu::item {
+    padding: 5px 30px;
+    border-radius: 8px;
+}
+
+QMenu::item:selected {
+    border: 1px solid rgb(73, 71, 168);
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: rgb(73, 71, 168);
+    margin-left: 10px;
+    margin-right: 5px;
+    border-radius: 8px;
+}
+
+QToolTip {
+	padding: 3px; 
+ 	background-color: #353535;
+    color: white;
+    font-weight:bold;
+	border:1px solid rgb(73, 71, 168);
+	border-radius: 3px;
+}
+
+/* OPEN FOLDER BUTTON */
+
+QPushButton#open_folder_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  
+}
+
+QPushButton:hover#open_folder_button {
+	background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#open_folder_button {
+	background-color: rgb(53, 51, 122)
+}
+
+/* OPEN FILE BUTTON */
+
+QPushButton#open_file_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  
+}
+
+QPushButton:hover#open_file_button {
+	background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#open_file_button {
+	background-color: rgb(53, 51, 122)
+}
+
+/* SAVE PLAYLIST BUTTON */
+
+QPushButton#save_playlist_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  
+}
+
+QPushButton:hover#save_playlist_button {
+	background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#save_playlist_button {
+	background-color: rgb(53, 51, 122)
+}
+
+/* OPEN PLAYLIST BUTTON */
+
+QPushButton#open_playlist_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  
+}
+
+QPushButton:hover#open_playlist_button {
+	background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#open_playlist_button {
+	background-color: rgb(53, 51, 122)
+}
+
+/* DELETE PLAYLIST BUTTON */
+
+QPushButton#delete_playlist {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  
+}
+
+QPushButton:hover#delete_playlist {
+	background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#delete_playlist {
+	background-color: rgb(53, 51, 122)
+}
+
+/* CHANGE THEME BUTTON */
+
+QPushButton#change_theme_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#change_theme_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#change_theme_button {
+    background-color: rgb(53, 51, 122)
+}
+
+/* SEARCH LINE */
+
+QLineEdit#search_line_edit {
+    background-color: rgb(74, 74, 74);
+	border-radius: 5px;
+	padding: 2px;
+	color: white;
+	border-bottom:1px solid rgb(73, 71, 168);
+}
+
+/* SONG LABEL */
+
+QLabel#song_label {
+	color: rgb(73, 71, 168);
+    font-weight:bold;
+}
+
+/* DURATION LABEL */
+
+QLabel#duration_label {
+	color: rgb(73, 71, 168);
+    font-weight:bold;
+}
+
+/* DURATION LABEL 2 */
+
+QLabel#duration_label_2 {
+	color: rgb(73, 71, 168);
+    font-weight:bold;
+}
+
+/* DURATION SLIDER */
+
+QSlider::groove:horizontal#duration_slider {
+	background-color: grey;
+	height: 4px;
+	border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal#duration_slider {
+	background-color: rgb(73, 71, 168);
+	border-radius: 2px;
+}
+
+QSlider::handle:horizontal#duration_slider {
+	background-color: rgb(0, 255, 255);
+	border: none;
+	width: 10px;
+	height: 10px;
+	margin: -3px 0;
+	border-radius: 5px;
+}
+
+/* LANGUAGE BUTTON */
+
+QPushButton#language_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#language_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#language_button {
+    background-color: rgb(53, 51, 122)
+}
+
+/* SOUND BUTTON */
+
+QPushButton#sound_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#sound_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#sound_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* VOLUME SLIDER */
+
+QSlider::groove:horizontal#volume_slider {
+    background-color: grey;
+    height: 4px;
+    border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal#volume_slider {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                            stop:0 rgb(73, 71, 168), stop:1 rgb(53, 51, 122));
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal#volume_slider {
+    background-color: rgb(0, 255, 255);
+    border: none;
+    width: 10px;
+    height: 10px;
+    margin: -3px 0;
+    border-radius: 5px;
+}
+
+QSlider#volume_slider {
+	border-radius: 2px;
+}
+
+/* PREVIOUS BUTTON */
+
+QPushButton#previous_button {
+    color: #ffffff;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 12px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#previous_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#previous_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* PRE BUTTON */
+
+QPushButton#pre_button {
+    color: #ffffff;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 12px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#pre_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#pre_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* PLAY BUTTON */
+
+QPushButton#play_button {
+    color: #ffffff;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 12px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#play_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#play_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* FORW BUTTON */
+
+QPushButton#forw_button {
+    color: #ffffff;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 12px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#forw_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#forw_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* FOLLOWING BUTTON */
+
+QPushButton#following_button {
+    color: #ffffff;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 12px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#following_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#following_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* REPLAY BUTTON */
+
+QPushButton#replay_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#replay_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:checked#replay_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* SHUFFLE BUTTON */
+
+QPushButton#shuffle_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#shuffle_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#shuffle_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* SOUND MENU BUTTON */
+
+QPushButton#sound_menu_button {
+    color: #ffffff;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 5px;  /* Добавляем скругленные углы */
+}
+
+QPushButton:hover#sound_menu_button {
+    background-color: rgb(64, 63, 149);
+}
+
+QPushButton:pressed#sound_menu_button {
+    background-color: rgb(53, 51, 122);
+}
+
+/* PLAYLIST WIDGET */
+
+QListWidget#playlist_widget {
+    background-color: #353535;
+    padding: 5px;
+    border: none;
+    border-radius: 10px;
+}
+
+QListWidget::item#playlist_widget {
+    background-color: #353535;
+    padding: 5px;
+    border: none;
+    border-radius: 10px;
+	color: white;
+	letter-spacing: 3px;
+}
+
+QListWidget::item:hover#playlist_widget {
+    background-color: rgb(73, 71, 168);
+}
+
+QListWidget::item:selected#playlist_widget {
+    color: rgb(66, 102, 199);
+}
+
+/* SCROLL AREA */
+
+/* VERTICAL SCROLLBAR */
+QScrollBar:vertical {
+	border: none;
+    background:#393939;
+    width: 14px;
+    margin: 15px 0 15px 0;
+	border-radius: 0px;
+ }
+
+/*  HANDLE BAR VERTICAL */
+QScrollBar::handle:vertical {	
+    background-color: rgb(74, 74, 74);
+	min-height: 30px;
+	border-radius: 7px;
+}
+QScrollBar::handle:vertical:hover{	
+	background-color: rgb(74, 74, 74);
+}
+QScrollBar::handle:vertical:pressed {	
+	background-color: rgb(73, 71, 168);
+}
+
+/* BTN TOP - SCROLLBAR */
+QScrollBar::sub-line:vertical {
+	border: none;
+    background-color: rgb(74, 74, 74);
+	height: 15px;
+	border-top-left-radius: 7px;
+	border-top-right-radius: 7px;
+	subcontrol-position: top;
+	subcontrol-origin: margin;
+}
+QScrollBar::sub-line:vertical:hover {	
+	background-color: rgb(74, 74, 74);
+}
+QScrollBar::sub-line:vertical:pressed {	
+	background-color: rgb(73, 71, 168);
+}
+
+/* BTN BOTTOM - SCROLLBAR */
+QScrollBar::add-line:vertical {
+	border: none;
+    background-color: rgb(74, 74, 74);
+	height: 15px;
+	border-bottom-left-radius: 7px;
+	border-bottom-right-radius: 7px;
+	subcontrol-position: bottom;
+	subcontrol-origin: margin;
+}
+QScrollBar::add-line:vertical:hover {	
+	background-color: rgb(74, 74, 74);
+}
+QScrollBar::add-line:vertical:pressed {	
+	background-color: rgb(73, 71, 168);
+}
+
+/* RESET ARROW */
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+	background: none;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+	background: none;
+}
+
+
+
+
+
+
+
+
+/* HORIZONTAL SCROLLBAR */
+QScrollBar:horizontal {
+    border: none;
+    background: #393939;
+    height: 14px; /* Set the width instead of the height */
+    margin: 0 15px 0 15px; /* Adjust the margins accordingly */
+    border-radius: 0px;
+}
+
+/* HANDLE BAR HORIZONTAL */
+QScrollBar::handle:horizontal {
+    background-color: rgb(74, 74, 74);
+    min-width: 30px; /* Set the height instead of the width */
+    border-radius: 7px;
+}
+QScrollBar::handle:horizontal:hover {
+    background-color: rgb(74, 74, 74);
+}
+QScrollBar::handle:horizontal:pressed {
+    background-color: rgb(73, 71, 168);
+}
+
+/* BTN LEFT - SCROLLBAR */
+QScrollBar::sub-line:horizontal {
+    border: none;
+    background-color: rgb(74, 74, 74);
+    width: 15px; /* Set the height instead of the width */
+    border-top-left-radius: 7px;
+    border-bottom-left-radius: 7px;
+    subcontrol-position: left; /* Change subcontrol position to left */
+    subcontrol-origin: margin;
+}
+QScrollBar::sub-line:horizontal:hover {
+    background-color: rgb(74, 74, 74);
+}
+QScrollBar::sub-line:horizontal:pressed {
+    background-color: rgb(73, 71, 168);
+}
+
+/* BTN RIGHT - SCROLLBAR */
+QScrollBar::add-line:horizontal {
+    border: none;
+    background-color: rgb(74, 74, 74);
+    width: 15px; /* Set the height instead of the width */
+    border-top-right-radius: 7px;
+    border-bottom-right-radius: 7px;
+    subcontrol-position: right; /* Change subcontrol position to right */
+    subcontrol-origin: margin;
+}
+QScrollBar::add-line:horizontal:hover {
+    background-color: rgb(74, 74, 74);
+}
+QScrollBar::add-line:horizontal:pressed {
+    background-color: rgb(73, 71, 168);
+}
+
+/* RESET ARROW */
+QScrollBar::left-arrow:horizontal,
+QScrollBar::right-arrow:horizontal {
+    background: none;
+}
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+    background: none;
+}
